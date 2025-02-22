@@ -44,8 +44,8 @@
                                 <td><input type="checkbox" name="userIds" class="user-checkbox" value="@user.Id"></td>
                                 <td>@user.Username</td>
                                 <td>@user.Email</td>
-                                <td>@(user.IsAdmin == 1 ? "Да" : "Нет")</td>
-                                <td>@(user.IsBlocked == 1 ? "Да" : "Нет")</td>
+                                <td>@(user.IsAdmin == 1 ? language == "ru" ? "Да" : "Yes" : language == "ru" ? "Нет" : "No")</td>
+                                <td>@(user.IsBlocked == 1 ? language == "ru" ? "Да" : "Yes" : language == "ru" ? "Нет" : "No")</td>
                                 <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@user.LastLogin.ToString("dd.MM.yyyy HH:mm")</td>
                             </tr>
