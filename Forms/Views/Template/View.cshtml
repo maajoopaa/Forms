@@ -1,0 +1,422 @@
+﻿@model Forms.DataAccess.Entities.TemplateEntity
+@{
+    var theme = (string)ViewBag.Settings.Theme;
+    var language = (string)ViewBag.Settings.Language;
+    var themes = (List<Forms.DataAccess.Entities.ThemeEntity>)ViewBag.Themes;
+    var context = (Forms.DataAccess.FormsDbContext)ViewBag.Context;
+    var user = (Forms.DataAccess.Entities.UserEntity)ViewBag.User;
+    bool isLiked = false;
+    if(user is not null)
+    {
+        var like = user.Likes
+        .FirstOrDefault(l => l.TemplateId == Model.Id);
+
+        if(like is not null)
+        {
+            isLiked = true;
+        }
+    }
+}
+
+<!DOCTYPE html>
+<html lang="@language">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: @(theme == "dark" ? "#181818" : "#ffffff");
+            color: @(theme == "dark" ? "#f5f5f5" : "#000000");
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .card {
+            background-color: @(theme == "dark" ? "#222222" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#555555" : "#dddddd");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        input, textarea, select {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            border: 1px solid @(theme == "dark" ? "#666666" : "#cccccc");
+        }
+
+        .question {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#555555" : "#dddddd");
+            transition: transform 0.2s ease;
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .template-header {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#555555" : "#dddddd");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .header-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover; 
+            border-radius: 8px 8px 0 0; 
+        }
+
+        .selected-item {
+            background-color: @(theme == "dark" ? "#333333" : "#f1f1f1");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .btn-group {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+            .btn-group .btn {
+                width: 48%;
+            }
+
+        .btn-outline-danger .bi {
+            fill: currentColor;
+            transition: fill 0.2s ease;
+        }
+
+        .btn-danger .bi {
+            fill: currentColor;
+        }
+
+        .bi-heart-fill {
+            animation: heartBeat 0.4s ease;
+        }
+
+        .text-muted {
+            color: @(theme == "dark" ? "#b0b0b0" : "#6c757d") !important;
+        }
+
+        .form-check-label {
+            color: @(theme == "dark" ? "#f5f5f5" : "#000000");
+        }
+
+        .form-check-input {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#666666" : "#cccccc");
+        }
+
+        .form-control:focus {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            border-color: @(theme == "dark" ? "#888888" : "#cccccc");
+            box-shadow: 0 0 0 0.2rem @(theme == "dark" ? "rgba(150, 150, 150, 0.25)" : "rgba(0, 123, 255, 0.25)");
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+            .is-invalid:focus {
+                box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+            }
+    </style>
+
+</head>
+<body>
+    <div class="container mt-4">
+        @if(!string.IsNullOrEmpty(Model.ImageURL))
+        {
+            <div class="header-image-container mb-4">
+                <img src="@Model.ImageURL" class="header-image" alt="Template header image">
+            </div>
+        }
+        <div class="card p-3 mb-4 template-header">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div>
+                    <h3 class="mb-1">@Model.Title</h3>
+                    <p class="text-muted mb-0">@Model.Description</p>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <span class="selected-item">
+                    @themes.FirstOrDefault(t => t.Id == Model.Theme)?.Title
+                </span>
+                @foreach (var tag in Model.Tags)
+                {
+                    <span class="selected-item">@tag</span>
+                }
+            </div>
+        </div>
+
+        <form id="responseForm" method="post" action="@Url.Action("Fill", "Form")">
+            <input type="hidden" name="templateId" value="@Model.Id" />
+
+            @foreach (var question in Model.Questions.OrderBy(q => q.Order).Where(q => q.IsVisible == 1))
+            {
+                <div class="card question mb-3 p-3" data-question-type="@((int)question.Type)" data-id="@question.Id">
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">
+                            @question.Title
+                            @if (question.IsVisible == 1)
+                            {
+                                <span class="text-danger">*</span>
+                            }
+                        </label>
+                        @if (!string.IsNullOrEmpty(question.Description))
+                        {
+                            <p class="text-muted mb-2">@question.Description</p>
+                        }
+
+                        @switch ((int)question.Type)
+                        {
+                            case 0:
+                                <input type="text"
+                                       class="form-control"
+                                       name="answers[@question.Id]"
+                                @(question.IsVisible == 1 ? "required" : "")>
+                                break;
+
+                            case 1:
+                                <textarea class="form-control"
+                                          name="answers[@question.Id]"
+                                          rows="3"
+                                @(question.IsVisible == 1 ? "required" : "")></textarea>
+                                break;
+
+                            case 2:
+                                <input type="number"
+                                       class="form-control"
+                                       name="answers[@question.Id]"
+                                @(question.IsVisible == 1 ? "required" : "")>
+                                break;
+
+                            case 3:
+                                <div class="options-group">
+                                    @foreach (var option in question.Options)
+                                    {
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   name="answers[@question.Id]"
+                                                   value="@option.Id"
+                                                   data-question-type="@question.Type">
+                                            <label class="form-check-label">
+                                                @option.Text
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                                break;
+                        }
+                    </div>
+                </div>
+            }
+            <div class="btn-group mt-4" role="group" aria-label="Action Buttons">
+                <button type="submit" onclick="saveFormData()" class="btn btn-primary">@(language == "ru" ? "Сохранить" : "Save")</button>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">@(language == "ru" ? "Отменить" : "Cancel")</a>
+                <button type="button"
+                        data-id="@Model.Id"
+                        
+                        id="likeButton"
+                        class="btn @(isLiked ? "btn-danger" : "btn-outline-danger")"
+                        onclick="toggleLike()"
+                        aria-label="@(language == "ru" ? "Лайк" : "Like")">
+                    <i class="bi @(isLiked ? "bi-heart-fill" : "bi-heart")"></i>
+                    <span id="likeCount" class="ms-2">@Model.Likes.Count</span>
+                </button>
+            </div>
+        </form>
+        @* need to fix *@
+        <h4 class="mt-4">@(language == "ru" ? "Комментарии" : "Comments")</h4>
+        <div class="container mt-4" id="commentsContainer">
+            @{
+                await Html.RenderPartialAsync("/Views/Comment/ViewList.cshtml", Model.Comments);
+            }
+        </div>
+        <div class="container mt-4">
+            @{
+                await Html.RenderPartialAsync("/Views/Comment/Add.cshtml", Model);
+            }
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function saveFormData() {
+            let answers = {};
+
+            document.querySelectorAll('.question').forEach(question => {
+                const questionId = question.dataset.id;
+                const questionType = question.dataset.questionType;
+
+                if (questionType === '3') {
+                    let selectedOptions = [];
+
+                    question.querySelectorAll('.form-check-input').forEach(checkbox => {
+                        if (checkbox.checked) {
+                            selectedOptions.push(checkbox.value);
+                        }
+                    });
+
+                    if (selectedOptions.length > 0) {
+                        answers[questionId] = selectedOptions.join(',');
+                    } else {
+                        answers[questionId] = '';
+                    }
+                } else {
+                    const inputElement = question.querySelector('[name^="answers["]');
+                    if (inputElement) {
+                        answers[questionId] = inputElement.value.trim();
+                    }
+                }
+            });
+
+            const jsonInput = document.createElement('input');
+            jsonInput.type = 'hidden';
+            jsonInput.name = 'answers';
+            jsonInput.value = JSON.stringify(answers);
+
+            
+            const form = document.getElementById('responseForm');
+            form.appendChild(jsonInput);
+
+            let isValid = true;
+            document.querySelectorAll('[required]').forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                alert("@(language == "ru" ? "Заполните все обязательные поля" : "Please fill all required fields")");
+                return;
+            }
+
+            form.submit();
+        }
+
+        async function toggleLike() {
+            const likeButton = document.getElementById('likeButton');
+            const likeIcon = likeButton.querySelector('.bi');
+            const likeCount = document.getElementById('likeCount');
+            const templateId = likeButton.dataset.id;
+
+            try {
+                const isLiked = likeButton.classList.contains('btn-danger');
+
+                const searchUrl = isLiked
+                    ? `/Like/Remove?templateId=${templateId}&userId=@user.Id`
+                    : `/Like/Add?templateId=${templateId}`;
+
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenElement ? tokenElement.value : '';
+
+                const response = await fetch(searchUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    }
+                });
+
+                switch (response.status) {
+                    case 200:
+                        break;
+                    case 403:
+                        window.location.href = '/Account/SignIn';
+                        return;
+                    case 404:
+                        alert('Ошибка: ресурс не найден.');
+                        return;
+                    default:
+                        throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                if (isLiked) {
+                    likeButton.classList.replace('btn-danger', 'btn-outline-danger');
+                    likeIcon.classList.replace('bi-heart-fill', 'bi-heart');
+                } else {
+                    likeButton.classList.replace('btn-outline-danger', 'btn-danger');
+                    likeIcon.classList.replace('bi-heart', 'bi-heart-fill');
+                }
+                const newCount = await getLikeCount(templateId);
+                likeCount.textContent = newCount;
+
+            } catch (error) {
+                return;
+            }
+        }
+
+        async function getLikeCount(templateId) {
+            try {
+                const response = await fetch(`/Like/Count?templateId=${templateId}`);
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения количества лайков (код ${response.status})`);
+                }
+
+                const text = await response.text();
+                return parseInt(text, 10) || 0;
+            } catch (error) {
+                return 0;
+            }
+        }
+        async function updateLikeCount(templateId) {
+            try {
+                const response = await fetch(`/Like/Count?templateId=${templateId}`);
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения количества лайков (код ${response.status})`);
+                }
+
+                const newCount = await getLikeCount(templateId);
+
+                const likeCount = document.getElementById('likeCount');
+                if (likeCount) {
+                    likeCount.textContent = newCount;
+                }
+            } catch (error) {
+            }
+        }
+
+        function startAutoUpdate() {
+            const likeButton = document.getElementById('likeButton');
+            if (likeButton) {
+                const templateId = likeButton.dataset.id;
+
+                setInterval(() => updateLikeCount(templateId), 3000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', startAutoUpdate);
+
+        async function updateComments(templateId) {
+                    try {
+                        const commentsContainer = document.getElementById("commentsContainer");
+
+                        const response = await fetch(`/Comment/GetList?templateId=${templateId}`);
+
+                        const html = await response.text();
+                        commentsContainer.innerHTML = html;
+
+                    } catch (error) {
+                    }
+                }
+
+                function startAutoUpdateComments() {
+                    const templateId = @(Model.Id)
+
+                    setInterval(() => updateComments(templateId), 3000);
+                }
+
+                document.addEventListener('DOMContentLoaded', startAutoUpdateComments)
+
+    </script>
+</body>
+</html>

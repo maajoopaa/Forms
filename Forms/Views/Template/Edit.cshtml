@@ -1,0 +1,790 @@
+﻿@model Forms.DataAccess.Entities.TemplateEntity
+
+@{
+    var theme = (string)ViewBag.Settings.Theme;
+    var language = (string)ViewBag.Settings.Language;
+    var themes = (List<Forms.DataAccess.Entities.ThemeEntity>)ViewBag.Themes;
+    var context = (Forms.DataAccess.FormsDbContext)ViewBag.Context;
+    var userTemp = (Forms.DataAccess.Entities.UserEntity)ViewBag.User;
+    bool isLiked = false;
+    if (userTemp is not null)
+    {
+        var like = userTemp.Likes
+        .FirstOrDefault(l => l.TemplateId == Model.Id);
+
+        if (like is not null)
+        {
+            isLiked = true;
+        }
+    }
+}
+<!DOCTYPE html>
+<html lang="@language">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: @(theme == "dark" ? "#121212" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .card {
+            background-color: @(theme == "dark" ? "#333333" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            border: 1px solid @(theme == "dark" ? "#555555" : "#dddddd");
+        }
+
+        input, textarea, select {
+            background-color: @(theme == "dark" ? "#444444" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            border: 1px solid @(theme == "dark" ? "#555555" : "#cccccc");
+        }
+
+        .btn-outline-primary {
+            background-color: @(theme == "dark" ? "#555555" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#007bff");
+            border-color: @(theme == "dark" ? "#555555" : "#007bff");
+        }
+
+        .form-check-label {
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .btn-group {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+            .btn-group .btn {
+                width: 48%;
+            }
+
+        .btn.active {
+            background-color: @(theme == "dark" ? "#007bff" : "#007bff");
+            color: #ffffff;
+        }
+
+        .selected-item {
+            display: inline-block;
+            background-color: @(theme == "dark" ? "#333333" : "#f1f1f1");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+
+            .selected-item .remove {
+                cursor: pointer;
+                font-weight: bold;
+                margin-left: 5px;
+                color: @(theme == "dark" ? "#ffffff" : "#000000");
+            }
+
+        .user-result, .tag-result, .selected-item {
+            cursor: pointer;
+        }
+
+        .question {
+            cursor: grab;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: @(theme == "dark" ? "#444444" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+            .question.dragging {
+                cursor: grabbing;
+                opacity: 0.5;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+
+        .drop-indicator {
+            height: 4px;
+            background-color: #007bff;
+            margin: 5px 0;
+            border-radius: 2px;
+            display: none;
+        }
+
+        .drop-zone {
+            position: relative;
+        }
+
+            .drop-zone.active .drop-indicator {
+                display: block;
+            }
+
+        .list-group-item {
+            background-color: @(theme == "dark" ? "#444444" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            border: 1px solid @(theme == "dark" ? "#555555" : "#dddddd");
+        }
+
+            .list-group-item:hover {
+                background-color: @(theme == "dark" ? "#555555" : "#f1f1f1");
+            }
+
+        .btn-outline-danger .bi {
+            fill: currentColor;
+            transition: fill 0.2s ease;
+        }
+
+        .btn-danger .bi {
+            fill: currentColor;
+            .bi-heart-fill
+
+        {
+            animation: heartBeat 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>@(language == "ru" ? "Редактирование шаблона" : "Edit Template")</h2>
+        <div class="card p-3">
+            <div class="mb-3">
+                <label class="form-label">@(language == "ru" ? "Название" : "Title")</label>
+                <input type="text" id="templateTitle" class="form-control" value="@Model.Title" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">@(language == "ru" ? "Описание" : "Description")</label>
+                <textarea id="templateDescription" class="form-control" required>@Model.Description</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">@(language == "ru" ? "Ссылка на изображение (необязательно)" : "Image URL (optional)")</label>
+                <input type="text" id="templateImageUrl" class="form-control" placeholder="@(language == "ru" ? "Введите ссылку на изображение" : "Enter image URL")" value="@Model.ImageURL">
+                <div id="imagePreview" class="mt-2">
+                    @if (!string.IsNullOrEmpty(Model.ImageURL))
+                    {
+                        <img src="@Model.ImageURL" alt="Current photo" style="max-height: 100px;">
+                    }
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">@(language == "ru" ? "Тема" : "Theme")</label>
+                <select id="templateTheme" class="form-select mb-2">
+                    @foreach (var templateTheme in themes)
+                    {
+                        <option value="@templateTheme.Id" selected="@(templateTheme.Id == Model.Theme)">@(language == "ru" ? templateTheme.TitleRu : templateTheme.Title)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">@(language == "ru" ? "Доступность" : "Visibility")</label>
+                <select id="templateVisibility" class="form-select">
+                    <option value="public" selected="@(Model.IsPublic == 1)">@(language == "ru" ? "Публичный" : "Public")</option>
+                    <option value="private" selected="@(Model.IsPublic == 0)">@(language == "ru" ? "Приватный" : "Private")</option>
+                </select>
+            </div>
+            <div id="privateUsersContainer" class="mb-3 @(Model.IsPublic == 1 ? "d-none" : "")">
+                <label class="form-label">@(language == "ru" ? "Добавить пользователей" : "Add Users")</label>
+                <input type="text" id="userSearch" class="form-control mt-2" placeholder="@(language == "ru" ? "Поиск пользователя" : "Search user")">
+                <div id="userResults" class="mt-2"></div>
+                <div class="btn-group" role="group" aria-label="Search Options">
+                    <button id="searchByUsername" onclick="setActiveButton('searchByUsername')" class="btn btn-outline-primary active">@(language == "ru" ? "Поиск по нику" : "Search by username")</button>
+                    <button id="searchByEmail" onclick="setActiveButton('searchByEmail')" class="btn btn-outline-primary">@(language == "ru" ? "Поиск по почте" : "Search by email")</button>
+                </div>
+                <div id="selectedUsers" class="mt-2">
+                    @foreach (var userId in Model.TemplateAccess)
+                    {
+                        var user = context.Users.FirstOrDefault(u => u.Id == userId);
+
+                        <span class="selected-item" data-id="@userId">
+                            @user.Username (@user.Email)
+                            <span class="remove" onclick="removeUser('@userId')">&times;</span>
+                        </span>
+                    }
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">@(language == "ru" ? "Теги" : "Tags")</label>
+                <div class="d-flex">
+                    <input type="text" id="tagSearch" class="form-control" placeholder="@(language == "ru" ? "Введите или выберите теги" : "Enter or select tags")">
+                    <button type="button" id="addTagButton" class="btn btn-outline-primary ms-2">@(language == "ru" ? "Добавить" : "Add")</button>
+                </div>
+                <div id="tagResults" class="mt-2"></div>
+                <div id="selectedTags" class="mt-2">
+                    @for(int i = 0;i < Model.Tags.Count; i++)
+                    {
+                        <span class="selected-item" data-id="@Model.Tags[i]">
+                            @Model.Tags[i]
+                            <span class="remove" onclick="removeTag('@i')">&times;</span>
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+        <h4 class="mt-4">@(language == "ru" ? "Вопросы" : "Questions")</h4>
+        <div id="questionsContainer">
+            @foreach (var question in Model.Questions.OrderBy(q => q.Order))
+            {
+                <div class="question mb-3 p-3 border rounded" draggable="true" data-id="@question.Id">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <input type="text" class="form-control" value="@question.Title" placeholder="@(language == "ru" ? "Название вопроса" : "Question Title")">
+                        <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeQuestion(this)">@(language == "ru" ? "Удалить" : "Delete")</button>
+                    </div>
+                    <textarea class="form-control mb-2" placeholder="@(language == "ru" ? "Описание вопроса" : "Question Description")">@question.Description</textarea>
+                    <select class="form-select mb-2" onchange="handleQuestionTypeChange(this)" value="@question.Type">
+                        <option value="0" selected="@((int)question.Type == 0)">@(language == "ru" ? "Однострочный текст" : "Singleline text")</option>
+                        <option value="1" selected="@((int)question.Type == 1)">@(language == "ru" ? "Многострочный текст" : "Multiline text")</option>
+                        <option value="2" selected="@((int)question.Type == 2)">@(language == "ru" ? "Числовой" : "Integer")</option>
+                        <option value="3" selected="@((int)question.Type == 3)">@(language == "ru" ? "Выбор" : "Checkbox")</option>
+                    </select>
+                    <div class="options-container mb-2">
+                        @if ((int)question.Type == 3)
+                        {
+                            <div class="mb-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addOption(this)">@(language == "ru" ? "Добавить вариант" : "Add Option")</button>
+                            </div>
+                            foreach (var option in question.Options)
+                            {
+                                <div class="mb-2" ata-id="@option.Id">
+                                    <input type="text" class="form-control option-input" value="@option.Text">
+                                    <button type="button" class="btn btn-outline-danger btn-sm mt-2" onclick="removeOption(this)">@(language == "ru" ? "Удалить" : "Remove")</button>
+                                </div>
+                            }
+                        }
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @(question.IsVisible == 1 ? "checked" : "")>
+                        <label class="form-check-label">@(language == "ru" ? "Виден пользователю" : "Visible to user")</label>
+                    </div>
+                </div>
+            }
+        </div>
+        <button id="addQuestion" class="btn btn-secondary mt-2">@(language == "ru" ? "Добавить вопрос" : "Add Question")</button>
+        <div class="btn-group mt-4" role="group" aria-label="Action Buttons">
+            <button type="submit" onclick="saveFormData()" class="btn btn-primary">@(language == "ru" ? "Сохранить" : "Save")</button>
+            <a href="@Url.Action("Profile", "Account")" class="btn btn-secondary">@(language == "ru" ? "Отменить" : "Cancel")</a>
+            <a href="/Template/Remove?templateId=@Model.Id" class="btn btn-danger">@(language == "ru" ? "Удалить" : "Delete")</a>
+            <button type="button"
+                    data-id="@Model.Id"
+                    id="likeButton"
+                    class="btn @(isLiked ? "btn-danger" : "btn-outline-danger")"
+                    onclick="toggleLike()"
+                    aria-label="@(language == "ru" ? "Лайк" : "Like")">
+                <i class="bi @(isLiked ? "bi-heart-fill" : "bi-heart")"></i>
+                <span id="likeCount" class="ms-2">@Model.Likes.Count</span>
+            </button>
+        </div>
+        <h4 class="mt-4">@(language == "ru" ? "Формы" : "Forms")</h4>
+        <div class="container mt-4">
+            <div class="row">
+                @foreach (var form in Model.Forms)
+                {
+                    <div class="col-md-4">
+                        <div class="card" onclick="window.location.href='/Form/View?formId=@(form.Id)'">
+                            <div class="card-body">
+                                <p class="card-text truncate">
+                                    @(language == "ru" ? "Ответил:" : "Answered by:") @form.FilledBy.Username
+                                </p>
+                                <p class="card-text truncate">
+                                    @(language == "ru" ? "Дата ответа:" : "Answering date:") @form.FilledAt.ToString("dd.MM.yyyy")
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        @* need to fix *@
+        <h4 class="mt-4">@(language == "ru" ? "Комментарии" : "Comments")</h4>
+        <div class="container mt-4" id="commentsContainer">
+            @{
+                await Html.RenderPartialAsync("/Views/Comment/ViewList.cshtml", Model.Comments);
+            }
+        </div>
+        <div class="container mt-4">
+            @{
+                await Html.RenderPartialAsync("/Views/Comment/Add.cshtml", Model);
+            }
+        </div>
+        <form id="templateForm" action="@Url.Action("Edit", "Template")" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" id="templateTitleInput" name="title" />
+            <input type="hidden" id="templateDescriptionInput" name="description" />
+            <input type="hidden" id="templateThemeInput" name="theme" />
+            <input type="hidden" id="templatePhotoInput" name="ImageURL" />
+            <input type="hidden" id="tagsInput" name="tags" />
+            <input type="hidden" id="templateVisibilityInput" name="isPublic" />
+            <input type="hidden" id="questionsInput" name="questions" />
+            <input type="hidden" id="templateAccessInput" name="templateAccess" />
+        </form>
+    </div>
+    <script>
+        document.getElementById("templateImageUrl").addEventListener("input", function () {
+            let imageUrl = this.value.trim();
+            let imagePreview = document.getElementById("imagePreview");
+
+            if (imageUrl) {
+                if (isValidUrl(imageUrl)) {
+                    imagePreview.innerHTML = `<img src="${imageUrl}" alt="Image Preview" class="img-fluid">`;
+                } else {
+                    imagePreview.innerHTML = "@(language == "ru" ? "Некорректная ссылка на изображение" : "Invalid image URL")";
+                }
+            } else {
+                imagePreview.innerHTML = "";
+            }
+        });
+
+        function isValidUrl(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        document.querySelectorAll('#selectedTags .selected-item').forEach(tag => {
+            tag.querySelector('.remove').addEventListener('click', () =>
+                removeTag(tag.dataset.id));
+        });
+
+        document.querySelectorAll('#selectedUsers .selected-item').forEach(user => {
+            user.querySelector('.remove').addEventListener('click', () =>
+                removeUser(user.dataset.id));
+        });
+
+
+        document.querySelectorAll('.question').forEach(question => {
+            question.addEventListener("dragstart", handleDragStart);
+            question.addEventListener("dragover", handleDragOver);
+            question.addEventListener("drop", handleDrop);
+            question.addEventListener("dragend", handleDragEnd);
+        });
+
+        document.getElementById("tagSearch").addEventListener("input", function () {
+            let query = this.value.trim();
+
+            if (query) {
+                fetch(`/Template/GetTags?query=${query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            let resultsHtml = data.map(tag =>
+                                `<li class="list-group-item tag-result" data-id="${tag}">${tag}</li>`
+                            ).join('');
+                            document.getElementById("tagResults").innerHTML = `<ul class="list-group">${resultsHtml}</ul>`;
+                        } else {
+                            document.getElementById("tagResults").innerHTML = "@(language == "ru" ? "Теги не найдены" : "No tags found")";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching tag data:", error);
+                        document.getElementById("tagResults").innerHTML = "Error fetching results";
+                    });
+            } else {
+                document.getElementById("tagResults").innerHTML = "";
+            }
+        });
+
+        document.getElementById("addTagButton").addEventListener("click", function () {
+            let tagSearch = document.getElementById("tagSearch");
+            let tagName = tagSearch.value.trim();
+
+            if (tagName && !document.querySelector(`#selectedTags .selected-item[data-id="${tagName}"]`)) {
+                let tagItem = document.createElement("span");
+                tagItem.classList.add("selected-item");
+                tagItem.setAttribute("data-id", tagName);
+                tagItem.innerHTML = `${tagName}<span class="remove" onclick="removeTag('${tagName}')">&times;</span>`;
+                document.getElementById("selectedTags").appendChild(tagItem);
+            }
+        });
+
+        function removeTag(tagId) {
+            let tagItem = document.querySelector(`.selected-item span[onclick="removeTag('${tagId}')"]`).parentElement;
+            tagItem.remove();
+        }
+
+        document.getElementById("userSearch").addEventListener("input", function () {
+            let query = this.value.trim();
+            let searchByUsernameActive = document.getElementById("searchByUsername").classList.contains("active");
+            let searchByEmailActive = document.getElementById("searchByEmail").classList.contains("active");
+
+            if (query && query.length > 1) {
+                let searchUrl = `/Template/GetUsers?property=${searchByUsernameActive ? "username" : "email"}&query=${query}`;
+
+                fetch(searchUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            let resultsHtml = data.map(user =>
+                                `<li class="list-group-item user-result" data-id="${user.id}">${user.username} (${user.email})</li>`
+                            ).join('');
+                            document.getElementById("userResults").innerHTML = `<ul class="list-group">${resultsHtml}</ul>`;
+                        } else {
+                            document.getElementById("userResults").innerHTML = "@(language == "ru" ? "Пользователи не найдены" : "No users found")";
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching user data:", error);
+                        document.getElementById("userResults").innerHTML = "Error fetching results";
+                    });
+            } else {
+                document.getElementById("userResults").innerHTML = "";
+            }
+        });
+
+        document.getElementById("userResults").addEventListener("click", function (e) {
+            if (e.target && e.target.classList.contains("user-result")) {
+                let userId = e.target.getAttribute("data-id");
+                let username = e.target.innerText;
+
+                if (document.querySelector(`#selectedUsers .selected-item[data-id="${userId}"]`)) {
+                    return;
+                }
+
+                let userItem = document.createElement("span");
+                userItem.classList.add("selected-item");
+                userItem.setAttribute("data-id", userId);
+                userItem.innerHTML = `${username}<span class="remove" onclick="removeUser('${userId}')">&times;</span>`;
+                document.getElementById("selectedUsers").appendChild(userItem);
+            }
+        });
+
+        document.getElementById("tagResults").addEventListener("click", function (e) {
+            if (e.target && e.target.classList.contains("tag-result")) {
+                let tagId = e.target.getAttribute("data-id");
+                let tagName = e.target.innerText;
+
+                if (document.querySelector(`#selectedTags .selected-item[data-id="${tagId}"]`)) {
+                    return;
+                }
+
+                let tagItem = document.createElement("span");
+                tagItem.classList.add("selected-item");
+                tagItem.setAttribute("data-id", tagId);
+                tagItem.innerHTML = `${tagName}<span class="remove" onclick="removeTag('${tagId}')">&times;</span>`;
+                document.getElementById("selectedTags").appendChild(tagItem);
+            }
+        });
+
+        function removeUser(userId) {
+            let userItem = document.querySelector(`.selected-item span[onclick="removeUser('${userId}')"]`).parentElement;
+            userItem.remove();
+        }
+
+        document.getElementById("templateVisibility").addEventListener("change", function () {
+            document.getElementById("privateUsersContainer").classList.toggle("d-none", this.value !== "private");
+        });
+
+        document.getElementById("addQuestion").addEventListener("click", function () {
+            let questionContainer = document.getElementById("questionsContainer");
+            let newQuestion = document.createElement("div");
+            newQuestion.className = "question mb-3 p-3 border rounded";
+            newQuestion.setAttribute("draggable", "true");
+            newQuestion.innerHTML =
+                `<div class="d-flex justify-content-between align-items-center mb-2">
+                                    <input type="text" class="form-control" placeholder="@(language == "ru" ? "Название вопроса" : "Question Title")">
+                                    <button type="button" class="btn btn-danger btn-sm ms-2" onclick="removeQuestion(this)">@(language == "ru" ? "Удалить" : "Delete")</button>
+                                </div>
+                                <textarea class="form-control mb-2" placeholder="@(language == "ru" ? "Описание вопроса" : "Question Description")"></textarea>
+                                <select class="form-select mb-2" onchange="handleQuestionTypeChange(this)">
+                                    <option value="0">@(language == "ru" ? "Однострочный текст" : "Singleline text")</option>
+                                    <option value="1">@(language == "ru" ? "Многострочный текст" : "Multiline text")</option>
+                                    <option value="2">@(language == "ru" ? "Числовой" : "Integer")</option>
+                                    <option value="3">@(language == "ru" ? "Выбор" : "Checkbox")</option>
+                                </select>
+                                <div class="options-container mb-2"></div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox">
+                                    <label class="form-check-label">@(language == "ru" ? "Виден пользователю" : "Visible to user")</label>
+                                </div>`;
+            questionContainer.appendChild(newQuestion);
+
+            newQuestion.addEventListener("dragstart", handleDragStart);
+            newQuestion.addEventListener("dragover", handleDragOver);
+            newQuestion.addEventListener("drop", handleDrop);
+            newQuestion.addEventListener("dragend", handleDragEnd);
+        });
+
+        function handleQuestionTypeChange(select) {
+            let optionsContainer = select.closest(".question").querySelector(".options-container");
+            if (select.value === "3") {
+                optionsContainer.innerHTML = `
+                                    <div class="mb-2">
+                                        <input type="text" class="form-control option-input" placeholder="@(language == "ru" ? "Вариант ответа" : "Option")">
+                                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addOption(this)">@(language == "ru" ? "Добавить вариант" : "Add Option")</button>
+                                    </div>
+                                `;
+            } else {
+                optionsContainer.innerHTML = "";
+            }
+        }
+
+        function addOption(button) {
+            let optionsContainer = button.closest(".options-container");
+            let newOption = document.createElement("div");
+            newOption.className = "mb-2";
+            newOption.innerHTML = `
+                                <input type="text" class="form-control option-input" placeholder="@(language == "ru" ? "Вариант ответа" : "Option")">
+                                <button type="button" class="btn btn-outline-danger btn-sm mt-2" onclick="removeOption(this)">@(language == "ru" ? "Удалить" : "Remove")</button>
+                            `;
+            optionsContainer.appendChild(newOption);
+        }
+
+        function removeOption(button) {
+            button.closest("div").remove();
+        }
+
+        function removeQuestion(button) {
+            button.closest(".question").remove();
+        }
+
+        let draggedItem = null;
+
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add("dragging");
+            e.dataTransfer.setData("text/plain", "");
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const dropZone = this.closest(".question");
+            const rect = dropZone.getBoundingClientRect();
+            const offset = e.clientY - rect.top;
+
+            const dropIndicator = dropZone.querySelector(".drop-indicator");
+            if (offset < rect.height / 2) {
+                dropIndicator.style.marginTop = "0";
+                dropIndicator.style.marginBottom = "5px";
+            } else {
+                dropIndicator.style.marginTop = "5px";
+                dropIndicator.style.marginBottom = "0";
+            }
+            dropZone.classList.add("active");
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const dropZone = this.closest(".question");
+            const rect = dropZone.getBoundingClientRect();
+            const offset = e.clientY - rect.top;
+
+            if (draggedItem !== dropZone) {
+                let questionsContainer = document.getElementById("questionsContainer");
+                let questions = Array.from(questionsContainer.children);
+                let draggedIndex = questions.indexOf(draggedItem);
+                let targetIndex = questions.indexOf(dropZone);
+
+                if (offset < rect.height / 2) {
+                    questionsContainer.insertBefore(draggedItem, dropZone);
+                } else {
+                    questionsContainer.insertBefore(draggedItem, dropZone.nextSibling);
+                }
+            }
+            dropZone.classList.remove("active");
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove("dragging");
+            draggedItem = null;
+            document.querySelectorAll(".question").forEach(q => q.classList.remove("active"));
+        }
+
+        function setActiveButton(buttonId) {
+            const buttons = document.querySelectorAll(".btn-group .btn");
+            buttons.forEach(button => {
+                button.classList.remove("active");
+            });
+            const activeButton = document.getElementById(buttonId);
+            activeButton.classList.add("active");
+        }
+
+        function saveFormData() {
+            let formData = new FormData();
+            formData.append("templateId", "@Model.Id");
+            formData.append("title", document.getElementById("templateTitle").value);
+            formData.append("description", document.getElementById("templateDescription").value);
+            formData.append("theme", document.getElementById("templateTheme").value);
+            formData.append("isPublic", document.getElementById("templateVisibility").value == "public" ? 1 : 0);
+
+            let imageUrl = document.getElementById("templateImageUrl").value.trim();
+            if (imageUrl) {
+                formData.append("ImageURL", imageUrl);
+            } else if ("@Model.ImageURL" !== "") {
+                formData.append("existingImage", "@Model.ImageURL");
+            }
+
+            let tags = [];
+            document.querySelectorAll("#selectedTags .selected-item").forEach(tag => {
+                tags.push(tag.dataset.id);
+            });
+            formData.append("tags", JSON.stringify(tags));
+
+            let questions = [];
+            document.querySelectorAll("#questionsContainer .question").forEach((question, index) => {
+                let questionObj = {
+                    Id: parseInt(question.dataset.id) || 0,
+                    Title: question.querySelector("input").value,
+                    Description: question.querySelector("textarea").value,
+                    Type: parseInt(question.querySelector("select").value),
+                    IsVisible: question.querySelector(".form-check-input").checked ? 1 : 0,
+                    Order: index + 1,
+                    Options: []
+                };
+
+                if (questionObj.Type === 3) {
+                    question.querySelectorAll(".option-input").forEach(option => {
+                        if (option.value.trim()) {
+                            questionObj.Options.push({
+                                Id: option.dataset.id || 0,
+                                Text: option.value.trim()
+                            });
+                        }
+                    });
+                }
+
+                questions.push(questionObj);
+            });
+            formData.append("questions", JSON.stringify(questions));
+
+            let templateAccess = [];
+            document.querySelectorAll("#selectedUsers .selected-item").forEach(user => {
+                templateAccess.push(user.dataset.id);
+            });
+            formData.append("templateAccess", JSON.stringify(templateAccess));
+
+            fetch("@Url.Action("Edit", "Template")", {
+                method: "POST",
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = "@Url.Action("Profile", "Account")";
+                } else {
+                    alert("@(language == "ru" ? "Ошибка при сохранении шаблона" : "Error saving template")");
+                }
+            });
+        }
+
+        async function toggleLike() {
+            const likeButton = document.getElementById('likeButton');
+            const likeIcon = likeButton.querySelector('.bi');
+            const likeCount = document.getElementById('likeCount');
+            const templateId = likeButton.dataset.id;
+
+            try {
+                const isLiked = likeButton.classList.contains('btn-danger');
+
+                const searchUrl = isLiked
+                    ? `/Like/Remove?templateId=${templateId}&userId=@userTemp.Id`
+                    : `/Like/Add?templateId=${templateId}`;
+
+                const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenElement ? tokenElement.value : '';
+
+                const response = await fetch(searchUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    }
+                });
+
+                switch (response.status) {
+                    case 200:
+                        break;
+                    case 403:
+                        window.location.href = '/Account/SignIn';
+                        return;
+                    case 404:
+                        alert('Ошибка: ресурс не найден.');
+                        return;
+                    default:
+                        throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                if (isLiked) {
+                    likeButton.classList.replace('btn-danger', 'btn-outline-danger');
+                    likeIcon.classList.replace('bi-heart-fill', 'bi-heart');
+                } else {
+                    likeButton.classList.replace('btn-outline-danger', 'btn-danger');
+                    likeIcon.classList.replace('bi-heart', 'bi-heart-fill');
+                }
+                const newCount = await getLikeCount(templateId);
+                likeCount.textContent = newCount;
+
+            } catch (error) {
+                return;
+            }
+        }
+
+        async function getLikeCount(templateId) {
+            try {
+                const response = await fetch(`/Like/Count?templateId=${templateId}`);
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения количества лайков (код ${response.status})`);
+                }
+
+                const text = await response.text();
+                return parseInt(text, 10) || 0;
+            } catch (error) {
+                return 0;
+            }
+        }
+        async function updateLikeCount(templateId) {
+            try {
+                const response = await fetch(`/Like/Count?templateId=${templateId}`);
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения количества лайков (код ${response.status})`);
+                }
+
+                const newCount = await getLikeCount(templateId);
+
+                const likeCount = document.getElementById('likeCount');
+                if (likeCount) {
+                    likeCount.textContent = newCount;
+                }
+            } catch (error) {
+            }
+        }
+
+        function startAutoUpdate() {
+            const likeButton = document.getElementById('likeButton');
+            if (likeButton) {
+                const templateId = likeButton.dataset.id;
+
+                setInterval(() => updateLikeCount(templateId), 3000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', startAutoUpdate);
+
+        async function updateComments(templateId) {
+            try {
+                const commentsContainer = document.getElementById("commentsContainer");
+
+                const response = await fetch(`/Comment/GetList?templateId=${templateId}`);
+
+                const html = await response.text();
+                commentsContainer.innerHTML = html;
+
+            } catch (error) {
+            }
+        }
+
+        function startAutoUpdateComments() {
+            const templateId = @(Model.Id)
+
+                setInterval(() => updateComments(templateId), 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', startAutoUpdateComments)
+
+    </script>
+</body>
+</html>

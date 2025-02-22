@@ -1,0 +1,49 @@
+﻿@model List<Forms.DataAccess.Entities.TemplateEntity>
+
+<div class="content-container mt-4" id="content">
+    <h5>@(ViewBag.Settings.Language == "ru" ? "За последние 10 дней" : "Over the past 10 days")</h5>
+    @await Html.PartialAsync("/Views/Template/ViewList.cshtml", Model.Where(t => t.CreatedAt.AddDays(10) >= DateTime.Now).ToList())
+</div>
+
+<div class="content-container mt-4">
+    <h5>@(ViewBag.Settings.Language == "ru" ? "Популярные шаблоны" : "Popular templates")</h5>
+    @{
+        var sortedTemplates = Model.OrderByDescending(t => t.Forms.Count).ToList();
+        if (sortedTemplates.Count >= 5)
+        {
+            await Html.RenderPartialAsync("/Views/Template/ViewList.cshtml", sortedTemplates.GetRange(0, 5));
+        }
+        else
+        {
+            await Html.RenderPartialAsync("/Views/Template/ViewList.cshtml", sortedTemplates);
+        }
+    }
+</div>
+
+<div class="tag-cloud mt-3">
+    <h5>@(ViewBag.Settings.Language == "ru" ? "Теги" : "Tags")</h5>
+    <div id="tagCloudContainer" class="d-flex flex-wrap gap-2"></div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        fetch('/Home/GetTags')
+            .then(response => response.json())
+            .then(tags => {
+                if (tags.length > 0) {
+                    let tagCloudHtml = tags.map(tag =>
+                        `<span class="badge bg-primary tag-item" onclick="filterByTag('${tag}')">${tag}</span>`
+                    ).join(' ');
+                    document.getElementById("tagCloudContainer").innerHTML = tagCloudHtml;
+                } else {
+                    document.getElementById("tagCloudContainer").innerHTML =
+                        "@(ViewBag.Settings.Language == "ru" ? "Нет тегов" : "No tags available")";
+                }
+            })
+            .catch(error => console.error(error));
+    });
+
+    function filterByTag(tag) {
+        window.location.href = `/Template/SearchByTag?tag=${tag}`;
+    }
+</script>

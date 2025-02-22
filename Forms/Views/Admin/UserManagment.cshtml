@@ -1,0 +1,103 @@
+﻿@{
+    var theme = (string)ViewBag.Settings.Theme;
+    var language = (string)ViewBag.Settings.Language;
+}
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="mb-3">
+            <button class="btn btn-danger" onclick="changeUserStatus('block')">@(language == "ru" ? "Заблокировать" : "Block")</button>
+            <button class="btn btn-secondary" onclick="changeUserStatus('unblock')">
+                <i class="bi bi-unlock"></i>
+            </button>
+            <button class="btn btn-secondary" onclick="changeUserStatus('admin')">
+                <i class="bi bi-person-check"></i>
+            </button>
+            <button class="btn btn-secondary" onclick="changeUserStatus('removeAdmin')">
+                <i class="bi bi-person-x"></i>
+            </button>
+            <button class="btn btn-danger" onclick="changeUserStatus('delete')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" class="user-checkbox" onclick="toggleAll(this)"></th>
+                        <th>@(language == "ru" ? "Ник" : "Username")</th>
+                        <th>@(language == "ru" ? "Почта" : "Email")</th>
+                        <th>@(language == "ru" ? "Админ" : "Admin")</th>
+                        <th>@(language == "ru" ? "Заблокирован" : "Blocked")</th>
+                        <th>@(language == "ru" ? "Дата создания" : "Creating date")</th>
+                        <th>@(language == "ru" ? "Последний вход" : "Last entry")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <form id="usersForm">
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td><input type="checkbox" name="userIds" class="user-checkbox" value="@user.Id"></td>
+                                <td>@user.Username</td>
+                                <td>@user.Email</td>
+                                <td>@(user.IsAdmin == 1 ? "Да" : "Нет")</td>
+                                <td>@(user.IsBlocked == 1 ? "Да" : "Нет")</td>
+                                <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@user.LastLogin.ToString("dd.MM.yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </form>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        async function changeUserStatus(action) {
+            var selectedUserIds = [];
+            alert();
+            document.querySelectorAll('input[name="userIds"]:checked').forEach(function (checkbox) {
+                selectedUserIds.push(checkbox.value);
+            });
+
+            if (selectedUserIds.length === 0) {
+                return;
+            }
+
+            let searchUrl = '';
+
+            switch (action) {
+                case 'block':
+                    searchUrl = '/Admin/Block?userIds=${selectedUserIds}';
+                    break;
+                case 'unblock':
+                    searchUrl = '/Admin/Unblock?userIds=${selectedUserIds}';
+                    return;
+                case 'admin':
+                    searchUrl = '/Admin/PromoteToAdmin?userIds=${selectedUserIds}';
+                    return;
+                case 'removeAdmin':
+                    searchUrl = '/Admin/LowerFromAdmin?userIds=${selectedUserIds}';
+                    return;
+                case 'delete':
+                    searchUrl = '/Admin/Remove?userIds=${selectedUserIds}';
+                    return;
+            }
+
+            const response = await fetch(searchUrl);
+
+            if (response.status === 200) {
+                window.location.href = "/Account/Profile";
+            }
+            else if(response.status === 403){
+                window.location.href = "/Account/SignIn";
+            }
+            else{
+                return;
+            }
+        }
+    </script>
+</body>

@@ -1,0 +1,16 @@
+﻿@model List<Forms.DataAccess.Entities.CommentEntity>
+
+<div class="container mt-4">
+    <div class="list-group">
+        @foreach (var comment in Model)
+        {
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">@comment.CreatedBy.Username</h5>
+                    <small>@comment.CreatedAt.ToString("dd MMM yyyy HH:mm")</small>
+                </div>
+                <p class="mb-1">@comment.Text</p>
+            </div>
+        }
+    </div>
+</div>

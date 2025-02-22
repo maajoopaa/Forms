@@ -1,0 +1,243 @@
+﻿@model Forms.DataAccess.Entities.FormEntity
+@{
+    var theme = (string)ViewBag.Settings.Theme;
+    var language = (string)ViewBag.Settings.Language;
+    var themes = (List<Forms.DataAccess.Entities.ThemeEntity>)ViewBag.Themes;
+    var context = (Forms.DataAccess.FormsDbContext)ViewBag.Context;
+}
+
+<!DOCTYPE html>
+<html lang="@language">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: @(theme == "dark" ? "#181818" : "#ffffff");
+            color: @(theme == "dark" ? "#f5f5f5" : "#000000");
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .card {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#3d3d3d" : "#dddddd");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        input, textarea, select {
+            background-color: @(theme == "dark" ? "#303030" : "#ffffff");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+            border: 1px solid @(theme == "dark" ? "#4a4a4a" : "#cccccc");
+        }
+
+        .question {
+            background-color: @(theme == "dark" ? "#303030" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#4a4a4a" : "#dddddd");
+            transition: transform 0.2s ease;
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .template-header {
+            background-color: @(theme == "dark" ? "#252525" : "#ffffff");
+            border: 1px solid @(theme == "dark" ? "#3d3d3d" : "#dddddd");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        p.text-muted {
+            color: @(theme == "dark" ? "#bbbbbb" : "#6c757d") !important;
+        }
+
+        .selected-item {
+            background-color: @(theme == "dark" ? "#252525" : "#f1f1f1");
+            color: @(theme == "dark" ? "#ffffff" : "#000000");
+        }
+
+        .btn-group {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+            .btn-group .btn {
+                width: 48%;
+            }
+
+        .header-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        @if (!string.IsNullOrEmpty(Model.Template.ImageURL))
+        {
+            <div class="header-image-container mb-4">
+                <img src="@Model.Template.ImageURL" class="header-image" alt="Template header image">
+            </div>
+        }
+        <div class="card p-3 mb-4 template-header">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div>
+                    <h3 class="mb-1">@Model.Template.Title</h3>
+                    <p class="text-muted mb-0">@Model.Template.Description</p>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <span class="selected-item">
+                    @themes.FirstOrDefault(t => t.Id == Model.Template.Theme)?.Title
+                </span>
+                @foreach (var tag in Model.Template.Tags)
+                {
+                    <span class="selected-item">@tag</span>
+                }
+            </div>
+        </div>
+
+        <form id="responseForm" method="post" action="@Url.Action("Edit", "Form")">
+            <input type="hidden" name="formId" value="@Model.Id" />
+
+            @foreach (var question in Model.Template.Questions.OrderBy(q => q.Order))
+            {
+                <div class="card question mb-3 p-3" data-question-type="@((int)question.Type)" data-id="@question.Id">
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">
+                            @question.Title
+                            @if (question.IsVisible == 1)
+                            {
+                                <span class="text-danger">*</span>
+                            }
+                        </label>
+                        @if (!string.IsNullOrEmpty(question.Description))
+                        {
+                            <p class="text-muted mb-2">@question.Description</p>
+                        }
+
+                        @switch ((int)question.Type)
+                        {
+                            case 0:
+                                <input type="text"
+                                       value="@(Model?.Answers?.FirstOrDefault(a => a.QuestionId == question.Id)?.Value)"
+                                       class="form-control"
+                                       name="answers[@question.Id]"
+                                @(question.IsVisible == 1 ? "required" : "")>
+                                break;
+
+                            case 1:
+                                <textarea class="form-control"
+                                          name="answers[@question.Id]"
+                                          rows="3"
+                                          @(question.IsVisible == 1 ? "required" : "")>@(Model?.Answers?.FirstOrDefault(a => a.QuestionId == question.Id)?.Value)
+                                </textarea>
+                                break;
+
+                            case 2:
+                                <input type="number"
+                                       value="@(Model?.Answers?.FirstOrDefault(a => a.QuestionId == question.Id)?.Value ?? "0")"
+                                       class="form-control"
+                                       name="answers[@question.Id]"
+                                @(question.IsVisible == 1 ? "required" : "")>
+                                break;
+
+                            case 3:
+                                <div class="options-group">
+                                    @foreach (var option in question.Options)
+                                    {
+                                        <div class="form-check">
+                                            @{
+                                                var answerOptions = Model?.Answers?.FirstOrDefault(a => a.QuestionId == question.Id)?.Value.Split(",");
+                                                var isChecked = answerOptions?.Contains(option.Id.ToString());
+                                            }
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   name="answers[@question.Id]"
+                                                   value="@option.Id"
+                                                   data-question-type="@question.Type"
+                                            @(isChecked == true ? "checked" : "")>
+                                                   
+                                            <label class="form-check-label">
+                                                @option.Text
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                                break;
+                        }
+                    </div>
+                </div>
+            }
+            <div class="btn-group mt-4" role="group" aria-label="Action Buttons">
+                <button type="submit" onclick="saveFormData()" class="btn btn-primary">@(language == "ru" ? "Сохранить" : "Save")</button>
+                <a href="@Url.Action("Profile", "Account")" class="btn btn-secondary">@(language == "ru" ? "Отменить" : "Cancel")</a>
+                <a href="/Form/Remove?formId=@Model.Id" class="btn btn-danger">@(language == "ru" ? "Удалить" : "Delete")</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function saveFormData() {
+            let answers = {};
+
+            document.querySelectorAll('.question').forEach(question => {
+                const questionId = question.dataset.id;
+                const questionType = question.dataset.questionType;
+
+                if (questionType === '3') {
+                    let selectedOptions = [];
+
+                    question.querySelectorAll('.form-check-input').forEach(checkbox => {
+                        if (checkbox.checked) {
+                            selectedOptions.push(checkbox.value);
+                        }
+                    });
+
+                    if (selectedOptions.length > 0) {
+                        answers[questionId] = selectedOptions.join(',');
+                    } else {
+                        answers[questionId] = '';
+                    }
+                } else {
+                    const inputElement = question.querySelector('[name^="answers["]');
+                    if (inputElement) {
+                        answers[questionId] = inputElement.value.trim();
+                    }
+                }
+            });
+
+            const jsonInput = document.createElement('input');
+            jsonInput.type = 'hidden';
+            jsonInput.name = 'answers';
+            jsonInput.value = JSON.stringify(answers);
+
+
+            const form = document.getElementById('responseForm');
+            form.appendChild(jsonInput);
+
+            let isValid = true;
+            document.querySelectorAll('[required]').forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                alert("@(language == "ru" ? "Заполните все обязательные поля" : "Please fill all required fields")");
+                return;
+            }
+
+            form.submit();
+        }
+    </script>
+</body>
+</html>
