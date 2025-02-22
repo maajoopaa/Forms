@@ -28,7 +28,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="mx-auto">
                     <form class="d-flex" role="search" action="/Template/SearchTemplate">
-                        <input class="form-control me-2" type="search" name="searchQuery" placeholder="@(language == "ru" ? "Поиск" : "Search")" aria-label="Search">
+                        <input class="form-control me-2" type="search" name="searchQuery" required placeholder="@(language == "ru" ? "Поиск" : "Search")" aria-label="Search">
                         <button class="btn btn-outline-success" type="submit">@(language == "ru" ? "Найти" : "Search")</button>
                     </form>
                 </div>
