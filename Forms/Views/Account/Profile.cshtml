@@ -1,4 +1,4 @@
-﻿@model Forms.DataAccess.Entities.UserEntity
+@model Forms.DataAccess.Entities.UserEntity
 @{
     var theme = (string)ViewBag.Settings.Theme;
     var language = (string)ViewBag.Settings.Language;
@@ -19,7 +19,6 @@
             color: @(theme == "dark" ? "#ffffff" : "#000000");
         }
 
-
         .nav-button {
             border: none;
             background: none;
@@ -34,7 +33,9 @@
             position: relative;
             display: flex;
             gap: 15px;
+            flex-wrap: wrap; 
         }
+
         .nav-indicator {
             position: absolute;
             bottom: 0;
@@ -92,15 +93,15 @@
 </head>
 <body class="@(theme == "dark" ? "bg-dark text-light" : "bg-light text-dark")">
     <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center position-relative">
+        <div class="d-flex justify-content-between align-items-center position-relative flex-wrap">
             <div class="nav-container">
-                <button class="nav-button active" id="templates-tab" onclick="switchContent('templates')">@(language == "ru" ? "Шаблоны" : "Templates")</button>
-                <button class="nav-button" id="forms-tab" onclick="switchContent('forms')">@(language == "ru" ? "Формы" : "Forms")</button>
-                @if(Model.IsAdmin == 1)
+                <button class="nav-button active col-12 col-md-auto" id="templates-tab" onclick="switchContent('templates')">@(language == "ru" ? "Шаблоны" : "Templates")</button>
+                <button class="nav-button col-12 col-md-auto" id="forms-tab" onclick="switchContent('forms')">@(language == "ru" ? "Формы" : "Forms")</button>
+                @if (Model.IsAdmin == 1)
                 {
-                    <button class="nav-button" id="users-tab" onclick="switchContent('users')">@(language == "ru" ? "Пользователи" : "Users")</button>
+                    <button class="nav-button col-12 col-md-auto" id="users-tab" onclick="switchContent('users')">@(language == "ru" ? "Пользователи" : "Users")</button>
                 }
-                <button class="btn btn-success" onclick="window.location.href='/Template/Create'">@(language == "ru" ? "Добавить шаблон" : "Add Template")</button>
+                <button class="btn btn-success col-12 col-md-auto" onclick="window.location.href='/Template/Create'">@(language == "ru" ? "Добавить шаблон" : "Add Template")</button>
                 <div class="nav-indicator" id="indicator"></div>
             </div>
             <span class="settings-icon" onclick="toggleSettings()">
@@ -109,7 +110,7 @@
             <div class="settings-container" id="settingsMenu">
                 <label>@(language == "ru" ? "Тема" : "Theme")</label>
                 <select class="form-select mb-2">
-                    @if(theme == "light")
+                    @if (theme == "light")
                     {
                         <option value="light">@(language == "ru" ? "Светлая" : "Light")</option>
                         <option value="dark">@(language == "ru" ? "Темная" : "Dark")</option>
@@ -122,7 +123,7 @@
                 </select>
                 <label>@(language == "ru" ? "Язык" : "Language")</label>
                 <select class="form-select mb-2">
-                    @if(language == "en")
+                    @if (language == "en")
                     {
                         <option value="en">English</option>
                         <option value="ru">Русский</option>
@@ -137,7 +138,7 @@
                 <a href="/Account/Quit" class="btn btn-danger w-100">@(language == "ru" ? "Выход" : "Logout")</a>
             </div>
         </div>
-        @if(Model.IsAdmin == 0)
+        @if (Model.IsAdmin == 0)
         {
             <div class="content-container mt-4" id="content">
                 @await Html.PartialAsync("/Views/Template/ViewList.cshtml", Model.Templates.OrderByDescending(t => t.CreatedAt).ToList())
@@ -173,7 +174,7 @@
             else if (type == 'forms') {
                 searchUrl = `/Account/GetForms`;
             }
-            else{
+            else {
                 searchUrl = `/Account/GetUsers`;
             }
 
@@ -186,60 +187,59 @@
         }
 
         function initScripts() {
-        const script = document.createElement('script');
-        script.innerHTML = `
-            // Функция для выбора всех чекбоксов
-            function toggleAll(source) {
-                const checkboxes = document.querySelectorAll('.user-checkbox');
-                checkboxes.forEach(cb => cb.checked = source.checked);
-            }
+            const script = document.createElement('script');
+            script.innerHTML = `
+                        // Функция для выбора всех чекбоксов
+                        function toggleAll(source) {
+                            const checkboxes = document.querySelectorAll('.user-checkbox');
+                            checkboxes.forEach(cb => cb.checked = source.checked);
+                        }
 
-            // Функция для изменения статуса пользователей
-            async function changeUserStatus(action) {
-                var selectedUserIds = [];
-                document.querySelectorAll('input[name="userIds"]:checked').forEach(function (checkbox) {
-                    selectedUserIds.push(checkbox.value);
-                });
+                        // Функция для изменения статуса пользователей
+                        async function changeUserStatus(action) {
+                            var selectedUserIds = [];
+                            document.querySelectorAll('input[name="userIds"]:checked').forEach(function (checkbox) {
+                                selectedUserIds.push(checkbox.value);
+                            });
 
-                if (selectedUserIds.length === 0) {
-                    return;
-                }
+                            if (selectedUserIds.length === 0) {
+                                return;
+                            }
 
-                let searchUrl = '';
+                            let searchUrl = '';
 
-                switch (action) {
-                    case 'block':
-                        searchUrl = '/Admin/Block?userIds=' + selectedUserIds;
-                        break;
-                    case 'unblock':
-                        searchUrl = '/Admin/Unblock?userIds=' + selectedUserIds;
-                        break;
-                    case 'admin':
-                        searchUrl = '/Admin/PromoteToAdmin?userIds=' + selectedUserIds;
-                        break;
-                    case 'removeAdmin':
-                        searchUrl = '/Admin/LowerFromAdmin?userIds=' + selectedUserIds;
-                        break;
-                    case 'delete':
-                        searchUrl = '/Admin/Remove?userIds=' + selectedUserIds;
-                        break;
-                }
+                            switch (action) {
+                                case 'block':
+                                    searchUrl = '/Admin/Block?userIds=' + selectedUserIds;
+                                    break;
+                                case 'unblock':
+                                    searchUrl = '/Admin/Unblock?userIds=' + selectedUserIds;
+                                    break;
+                                case 'admin':
+                                    searchUrl = '/Admin/PromoteToAdmin?userIds=' + selectedUserIds;
+                                    break;
+                                case 'removeAdmin':
+                                    searchUrl = '/Admin/LowerFromAdmin?userIds=' + selectedUserIds;
+                                    break;
+                                case 'delete':
+                                    searchUrl = '/Admin/Remove?userIds=' + selectedUserIds;
+                                    break;
+                            }
 
-                const response = await fetch(searchUrl);
+                            const response = await fetch(searchUrl);
 
-                if (response.status === 200) {
-                    location.reload();
-                } else if (response.status === 403) {
-                    window.location.href = "/Account/SignIn";
-                } else {
-                    alert('error');
-                    return;
-                }
-            }
-        `;
-        document.body.appendChild(script);
-    }
-
+                            if (response.status === 200) {
+                                location.reload();
+                            } else if (response.status === 403) {
+                                window.location.href = "/Account/SignIn";
+                            } else {
+                                alert('error');
+                                return;
+                            }
+                        }
+                    `;
+            document.body.appendChild(script);
+        }
 
         window.onload = function () {
             const activeButton = document.querySelector(".nav-button.active");
@@ -266,7 +266,6 @@
             const language = document.querySelector(".form-select:nth-of-type(2)").value;
 
             fetch(`/Account/SaveSettings?theme=${theme}&language=${language}`, {
-
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -285,7 +284,6 @@
                     alert(language === "ru" ? "Ошибка сети" : "Network error");
                 });
         });
-
     </script>
 </body>
 </html>
