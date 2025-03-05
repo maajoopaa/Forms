@@ -14,6 +14,8 @@ namespace Forms.DataAccess.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
+        public string ApiToken { get; set; } = Guid.NewGuid().ToString();
+
         public string Username { get; set; } = null!;
 
         public string Email { get; set; } = null!;

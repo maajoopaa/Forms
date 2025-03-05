@@ -96,11 +96,14 @@
             <div class="nav-container">
                 <button class="nav-button active" id="templates-tab" onclick="switchContent('templates')">@(language == "ru" ? "Шаблоны" : "Templates")</button>
                 <button class="nav-button" id="forms-tab" onclick="switchContent('forms')">@(language == "ru" ? "Формы" : "Forms")</button>
-                @if(Model.IsAdmin == 1)
+                @if (Model.IsAdmin == 1)
                 {
-                    <button class="nav-button" id="users-tab" onclick="switchContent('users')">@(language == "ru" ? "Пользователи" : "Users")</button>
+                    <button class="nav-button" id="users-tab" onclick="switchContent('users')">
+                        <i class="bi bi-people"></i>
+                    </button>
                 }
                 <button class="btn btn-success" onclick="window.location.href='/Template/Create'">@(language == "ru" ? "Добавить шаблон" : "Add Template")</button>
+                <button class="btn btn-success" onclick="window.location.href='/Salesforce/CollectInformation'">@(language == "ru" ? "Подписаться на рассылку" : "Subscribe to the newsletter")</button>
                 <div class="nav-indicator" id="indicator"></div>
             </div>
             <span class="settings-icon" onclick="toggleSettings()">
@@ -188,7 +191,6 @@
         function initScripts() {
         const script = document.createElement('script');
         script.innerHTML = `
-            // Функция для выбора всех чекбоксов
             function toggleAll(source) {
                 const checkboxes = document.querySelectorAll('.user-checkbox');
                 checkboxes.forEach(cb => cb.checked = source.checked);

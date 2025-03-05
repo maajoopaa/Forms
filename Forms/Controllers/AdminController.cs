@@ -74,7 +74,7 @@ namespace Forms.Controllers
         }
 
         [Authorize]
-        public IActionResult LowerFromAdmin(List<int> userIds)
+        public IActionResult LowerFromAdmin([FromBody]List<int> userIds)
         {
             if (!User.Identity.IsAuthenticated)
             {

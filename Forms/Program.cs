@@ -1,7 +1,10 @@
 using Forms.DataAccess;
+using Forms.Handlers;
 using Forms.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +27,8 @@ builder.Services.AddTransient<ICommentService, CommentService>();
 builder.Services.AddTransient<ILikeService,LikeService>();
 
 builder.Services.AddTransient<IQuestionService,QuestionService>();
+
+builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiTokenAuthenticationHandler>("ApiToken",null);
 
 builder.Services.AddControllersWithViews();
 
